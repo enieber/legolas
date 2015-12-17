@@ -49,7 +49,7 @@ define(
 
                 var modulo;
 
-                if (layer === 'component') {
+                if (layer === 'components') {
                     this.componentsModules.push(component.name);
                     modulo = angular.module(component.name, this.componentsDependencies());
                 }
@@ -59,19 +59,19 @@ define(
                 }
 
                 _.each(component.controllers, function (controller) {
-                    modulo.controller(controller.name, controller.ref);
+                    modulo.controller(controller[0], controller[1]);
                 });
 
                 _.each(component.configs, function (config) {
-                    modulo.controller(config);
+                    modulo.config(config);
                 });
 
                 _.each(component.directives, function (directive) {
-                    modulo.directive(directive.name, directive.ref);
+                    modulo.directive(directive[0], directive[1]);
                 });
 
                 _.each(component.services, function (service) {
-                    modulo.service(service.name, service.ref);
+                    modulo.service(service[0], service[1]);
                 });
 
                 _.each(component.runs, function (run) {
