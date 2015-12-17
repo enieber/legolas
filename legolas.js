@@ -94,6 +94,7 @@ define(
                         lifecycleMgmt.initializeModules(options.components, 'components').done(function () {
                             moduleMgmt.registerApp(options.name);
                             angular.bootstrap(document, [options.name]);
+                            options.callback();
                         });
                     });
 
