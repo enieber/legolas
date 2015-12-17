@@ -78,6 +78,10 @@ define(
                     modulo.run(run);
                 });
 
+                _.each(component.constants, function (constant) {
+                    modulo.constant(constant[0], constant[1]);
+                });
+
             }
 
         };
@@ -101,7 +105,9 @@ define(
                 require(modules, function () {
                     for (var i = 0; i < arguments.length; i++) {
                         var component = arguments[i].initialize();
-                        moduleMgmt.registerComponent(component, layer)
+                        if (component) {
+                            moduleMgmt.registerComponent(component, layer)
+                        }
                     }
                     deferred.resolve(arguments);
                 });
