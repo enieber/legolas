@@ -1,126 +1,203 @@
-define(
-    [
-        'underscore',
-        'jquery',
-        'bootstrap',
-        'angular',
-        'angularRouter',
-        'angularLocale',
-        'angularCookie',
-        'angularMocks',
-        'angularAnimate'
+'use strict';
 
-    ],
-    function (_, jquery, bootstrap, angular) {
+(function () {
 
-        var moduleMgmt = {
+    function isTestRunning() {
+        return (window.__karma__) ? true : false;
+    }
 
-            baseModules: ['ui.router', 'ngCookies'],
+    var amdMgmt = {
 
-            extensionsModules: [],
 
-            componentsModules: [],
+        loadConfig: function (cb) {
 
-            mockModules: (document.URL.match(/\?dev/)) ? ['ngMockE2E'] : [],
+            var url = (isTestRunning()) ? '/base/app/config.json' : 'config.json',
+                xhttp = new XMLHttpRequest();
 
-            extensionsDependencies: function () {
-                return this.baseModules
-                    .concat(this.mockModules);
-            },
-
-            componentsDependencies: function () {
-                return this.baseModules
-                    .concat(this.extensionsModules)
-                    .concat(this.mockModules);
-            },
-
-            appDependencies: function () {
-                return this.baseModules
-                    .concat(this.extensionsModules)
-                    .concat(this.componentsModules)
-                    .concat(this.mockModules);
-            },
-
-            registerApp: function (name) {
-                return angular.module(name, this.appDependencies());
-            },
-
-            registerComponent: function (component, layer) {
-
-                var modulo;
-
-                if (layer === 'components') {
-                    this.componentsModules.push(component.name);
-                    modulo = angular.module(component.name, this.componentsDependencies());
+            xhttp.onreadystatechange = function () {
+                if (xhttp.readyState == 4 && xhttp.status == 200) {
+                    var config = JSON.parse(xhttp.responseText);
+                    cb(config);
                 }
-                else {
-                    this.extensionsModules.push(component.name);
-                    modulo = angular.module(component.name, this.extensionsDependencies());
+            };
+
+            xhttp.open('GET', url, true);
+            xhttp.send();
+        },
+
+        getTestFiles: function () {
+            var allTestFiles = [];
+            var TEST_REGEXP = /spec\.js$/;
+
+            var pathToModule = function (path) {
+                return path.replace(/^\/base\/app\//, '').replace(/\.js$/, '');
+            };
+
+            Object.keys(window.__karma__.files).forEach(function (file) {
+                if (TEST_REGEXP.test(file)) {
+                    // Normalize paths to RequireJS module names.
+                    allTestFiles.push(pathToModule(file));
                 }
+            });
 
-                _.each(component.controllers, function (controller) {
-                    modulo.controller(controller[0], controller[1]);
-                });
+            return allTestFiles;
+        },
 
-                _.each(component.configs, function (config) {
-                    modulo.config(config);
-                });
-
-                _.each(component.directives, function (directive) {
-                    modulo.directive(directive[0], directive[1]);
-                });
-
-                _.each(component.services, function (service) {
-                    modulo.service(service[0], service[1]);
-                });
-
-                _.each(component.runs, function (run) {
-                    modulo.run(run);
-                });
-
-                _.each(component.constants, function (constant) {
-                    modulo.constant(constant[0], constant[1]);
-                });
-
+        getAllModules: function (config) {
+            var allmodules = [];
+            allmodules = allmodules.concat(config.extensions).concat(config.components);
+            if (isTestRunning()) {
+                allmodules = allmodules.concat(amdMgmt.getTestFiles());
             }
+            return allmodules;
+        },
 
-        };
+        configRequirejs: function (config) {
 
-        var lifecycleMgmt = {
-
-            start: function (options) {
-                angular.element().ready(function () {
-                    lifecycleMgmt.initializeModules(options.extensions, 'extensions').done(function () {
-                        lifecycleMgmt.initializeModules(options.components, 'components').done(function () {
-                            moduleMgmt.registerApp(options.name);
-                            angular.bootstrap(document, [options.name]);
-                            if (options.callback) {
-                                options.callback();
-                            }
-                        });
-                    });
-
-                });
-            },
-
-            initializeModules: function (modules, layer) {
-                var deferred = jquery.Deferred();
-                require(modules, function () {
-                    for (var i = 0; i < arguments.length; i++) {
-                        var component = arguments[i].initialize();
-                        if (component) {
-                            moduleMgmt.registerComponent(component, layer)
+            require.config({
+                name: 'main',
+                waitSeconds: 20,
+                baseUrl: isTestRunning() ? '/base/app' : '',
+                paths: config.paths,
+                shim: config.shim,
+                priority: config.priority,
+                deps: amdMgmt.getAllModules(config),
+                callback: function () {
+                    lifecycleMgmt.startRegistration(config, function () {
+                        if (isTestRunning()) {
+                            window.__karma__.start();
                         }
-                    }
-                    deferred.resolve(arguments);
-                });
-                return deferred.promise();
+                    });
+                }
+            });
+        }
+    };
+
+    var moduleMgmt = {
+
+        baseModules: [],
+
+        extensionsModules: [],
+
+        componentsModules: [],
+
+        mockModules: (document.URL.match(/\?dev/)) ? ['ngMockE2E'] : [],
+
+        extensionsDependencies: function () {
+            return this.baseModules
+                .concat(this.mockModules);
+        },
+
+        componentsDependencies: function () {
+            return this.baseModules
+                .concat(this.extensionsModules)
+                .concat(this.mockModules);
+        },
+
+        appDependencies: function () {
+            return this.baseModules
+                .concat(this.extensionsModules)
+                .concat(this.componentsModules)
+                .concat(this.mockModules);
+        },
+
+        registerApp: function (name) {
+            return angular.module(name, this.appDependencies());
+        },
+
+        registerComponent: function (component, layer) {
+
+            var modulo;
+
+            if (layer === 'components') {
+                this.componentsModules.push(component.name);
+                modulo = angular.module(component.name, this.componentsDependencies());
             }
-        };
+            else {
+                this.extensionsModules.push(component.name);
+                modulo = angular.module(component.name, this.extensionsDependencies());
+            }
 
-        return {
+            _.each(component.controllers, function (controller) {
+                modulo.controller(controller[0], controller[1]);
+            });
 
-            start: lifecycleMgmt.start
+            _.each(component.configs, function (config) {
+                modulo.config(config);
+            });
 
-        };
-    });
+            _.each(component.directives, function (directive) {
+                modulo.directive(directive[0], directive[1]);
+            });
+
+            _.each(component.services, function (service) {
+                modulo.service(service[0], service[1]);
+            });
+
+            _.each(component.runs, function (run) {
+                modulo.run(run);
+            });
+
+            _.each(component.constants, function (constant) {
+                modulo.constant(constant[0], constant[1]);
+            });
+        }
+    };
+
+    var lifecycleMgmt = {
+
+        startRegistration: function (options, callback) {
+            require(['jquery', 'angular'], function (jquery, angular) {
+                angular.element().ready(function () {
+                    var cbInitComponents, cbInitApp,
+                        mainModuleName = options.name || 'app';
+
+                    moduleMgmt.baseModules = options.baseModules || [];
+
+                    cbInitApp = function () {
+                        var mainModule = moduleMgmt.registerApp(mainModuleName);
+                        angular.bootstrap(document, [mainModuleName]);
+                        if (callback) {
+                            callback(mainModule);
+                        }
+                    };
+
+                    cbInitComponents = function () {
+                        lifecycleMgmt.initializeModules(jquery, options.components, 'components').done(cbInitApp);
+                    };
+
+                    if (options.extensions) {
+                        lifecycleMgmt.initializeModules(jquery, options.extensions, 'extensions').done(cbInitComponents);
+                    }
+                    else if (options.components) {
+                        lifecycleMgmt.initializeModules(jquery, options.components, 'components').done(cbInitApp);
+                    }
+                    else {
+                        cbInitApp();
+                    }
+                });
+            });
+        },
+
+        initializeModules: function (jquery, modules, layer) {
+            var deferred = jquery.Deferred();
+            require(modules, function () {
+                for (var i = 0; i < arguments.length; i++) {
+                    var component = arguments[i].initialize();
+                    if (component) {
+                        moduleMgmt.registerComponent(component, layer)
+                    }
+                }
+                deferred.resolve(arguments);
+            });
+            return deferred.promise();
+        }
+    };
+
+    window.legolas = {
+        start: function () {
+            amdMgmt.loadConfig(amdMgmt.configRequirejs);
+        }
+    };
+
+})();
