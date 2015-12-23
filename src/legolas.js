@@ -1,13 +1,12 @@
-'use strict';
-
 (function () {
 
     function isTestRunning() {
         return (window.__karma__) ? true : false;
     }
 
-    var amdMgmt = {
+    var angular, jquery, _;
 
+    var amdMgmt = {
 
         loadConfig: function (cb) {
 
@@ -147,7 +146,12 @@
     var lifecycleMgmt = {
 
         startRegistration: function (options, callback) {
-            require(['jquery', 'angular'], function (jquery, angular) {
+            require(['jquery', 'angular', 'underscore'], function (_jquery_, _angular_, underscore) {
+
+                angular = _angular_;
+                jquery = _jquery_;
+                _ = underscore;
+
                 angular.element().ready(function () {
                     var cbInitComponents, cbInitApp,
                         mainModuleName = options.name || 'app';
@@ -185,7 +189,7 @@
                 for (var i = 0; i < arguments.length; i++) {
                     var component = arguments[i].initialize();
                     if (component) {
-                        moduleMgmt.registerComponent(component, layer)
+                        moduleMgmt.registerComponent(component, layer);
                     }
                 }
                 deferred.resolve(arguments);
