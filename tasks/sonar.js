@@ -1,6 +1,6 @@
 module.exports = {
 
-    getConfig: function (env, grunt) {
+    getConfig: function (env) {
         return {
 
             sonarRunner: {
