@@ -7,7 +7,7 @@ var ENV = {
     test: 'test',
     main: 'legolas',
 
-    browsers: ['Chrome'],
+    browsers: ['PhantomJS'],
 
     projectKey: 'br.com.azi.framework:legolas',
     projectName: 'legolas',
