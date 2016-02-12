@@ -1,14 +1,14 @@
 {
   "name": "legolas",
-  "description": "Controlador do ciclo de vida da arquitetura extensível do framework da AZ Informática",
+  "description": "Controlador do ciclo de vida da arquitetura extensível Elrond",
   "private": true,
   "moduleType": "amd",
   "authors": [
-    "Charles viegas <cviegas@azi.net.br>"
+    "Charles viegas <charles.viegas@codate.com.br>"
   ],
   "repository": {
     "type": "git",
-    "url": "http://git.azi.com.br/framework/legolas.git"
+    "url": "https://github.com/charlesviegas/legolas.git"
   },
   "main": [
     "./dist/legolas.js"
